@@ -63,13 +63,15 @@ static const GtkTargetEntry drop_types[] = {
     { "STRING", 0, 0 },
     { "text/plain", 0, 0},
     { "text/uri-list", 0, 0},
-    { "widget", GTK_TARGET_OTHER_WIDGET, TARGET_WIDGET_DRAGED } //drag and drop target
+    { "task-item-widget", GTK_TARGET_SAME_APP & GTK_TARGET_OTHER_WIDGET,
+        TARGET_WIDGET_DRAGED } //drag and drop target
 };
 
 static const gint n_drop_types = G_N_ELEMENTS(drop_types);
 
 static const GtkTargetEntry drag_types[] = {
-    { "widget", GTK_TARGET_OTHER_WIDGET, TARGET_WIDGET_DRAGED } //drag and drop source
+    { "task-item-widget", GTK_TARGET_SAME_APP & GTK_TARGET_OTHER_WIDGET,
+        TARGET_WIDGET_DRAGED } //drag and drop source
 };
 
 static const gint n_drag_types = G_N_ELEMENTS(drag_types);
@@ -675,6 +677,11 @@ static void on_drag_received_data (
             case TARGET_WIDGET_DRAGED: {
                 GtkWidget *taskList = mainapp->tasks;
                 gpointer *data = (gpointer *) gtk_selection_data_get_data(selection_data);
+                GdkAtom target = gtk_selection_data_get_target(selection_data);
+                char* target_name = gdk_atom_name (target);
+                if(g_strcmp0(target_name, "task-item-widget")) {
+                    return;
+                }
                 g_assert(GTK_IS_WIDGET(*data));
                 GtkWidget *taskItem = GTK_WIDGET(*data);
                 g_assert(TASK_IS_ITEM(taskItem));
