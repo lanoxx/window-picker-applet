@@ -124,6 +124,7 @@ static gboolean load_window_picker (
     textdomain (GETTEXT_PACKAGE);
     wnck_set_client_type (WNCK_CLIENT_TYPE_PAGER);
     mainapp = app = g_slice_new0 (WinPickerApp);
+    mainapp->last_window_source_id = -1; //set to -1 to know its uninitialized
     GSettings* settings = g_settings_new(
         "org.gnome.window-picker-applet"
     );

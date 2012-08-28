@@ -20,6 +20,23 @@ typedef struct {
     GtkWidget    *applet;
     GtkWidget    *title;
     GSettings    *settings;
+    
+    /* This is needed to activate a window when the user drags
+     * a string onto a task item.
+     *
+     * last_window_for_activation:
+     * This is the pointer to the task-item which was last 
+     * registered to the timer function.
+     */
+    GtkWidget   *last_window_for_activation;
+    /*
+     * This is the id of the timer that will activate the
+     * window which last_window_for_activation points to.
+     * We need it if we want to cancel the timer when the
+     * user decides to drag the string to another icon and
+     * the time was not up yet.
+     */
+    guint        last_window_source_id;
 } WinPickerApp;
 
 /** 
