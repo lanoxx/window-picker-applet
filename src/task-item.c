@@ -525,6 +525,13 @@ static void on_screen_window_closed (
     }
 }
 
+/**
+ * This is a helper function to activate the window that belongs to
+ * widget. This function is called in response to the
+ * on_drag_received_data function, when the user has dragged a string
+ * onto the widget, it brings up the window, so the user can drop the
+ * string in the other window.
+ */
 static gboolean activate_window (GtkWidget *widget) {
     //gint active;
     TaskItemPrivate *priv;
@@ -546,6 +553,39 @@ static gboolean activate_window (GtkWidget *widget) {
     return FALSE;
 }
 
+/* Drag and drop code
+ * ==================
+ * This drag and drop code, does two things. The first is to allow the user to
+ * click on an icon in the window-picker list and drag it to some other position
+ * in the list, the icon should follow the mouse until the user releases the mouse
+ * button. This effectively allows the user to rearrange the icons in on the window
+ * picker.
+ * The second thing is to allow the user to drag a text string from one application
+ * to an icon in the window picker and without releasing the mouse, hover on the icon
+ * this should bring up the window that belongs to this icon after a small timeout
+ * (e.g. 500ms or 1sec) and the user can then finish the drag and drop operation
+ * by dropping the text in that window. This allows the user to drag text from one
+ * application and drop it in another one.
+ *
+ * Signales are evoked in this order:
+ * begin, motion, leave, drop, data-get, data-received, data-delete (not always), end
+ */
+
+/**
+ * When the drag begins we first set the right icon to appear next to the cursor.
+ */
+static void on_drag_begin(GtkWidget *widget, GdkDragContext *context, gpointer user_data) {
+    TaskItem *item = TASK_ITEM (widget);
+    TaskItemPrivate *priv = item->priv;
+    GdkRectangle area = priv->area;
+    gint size = MIN (area.height, area.width);
+    GdkPixbuf *pixbuf = task_item_sized_pixbuf_for_window (item, priv->window, size);
+    gtk_drag_source_set_icon_pixbuf(widget, pixbuf);
+    //setting "drag-true" to 1 indicates that a drag and drop operation is in progress
+    g_object_set_data (G_OBJECT (item), "drag-true", GINT_TO_POINTER (1));
+}
+
+
 /* Emitted when a drag leaves the destination */
 static void on_drag_leave (
     GtkWidget *item,
@@ -553,6 +593,7 @@ static void on_drag_leave (
     guint time,
     gpointer user_data)
 {
+    //setting "drag-true" to 0 indicates that the drag and drop operation has finished
     g_object_set_data (G_OBJECT (item), "drag-true", GINT_TO_POINTER (0));
 }
 
@@ -585,26 +626,15 @@ static gboolean on_drag_motion (
     } else {
         g_warning("Drag ended without target");
     }
-    return FALSE;
+    return FALSE; //This must return FALSE or the task-item won't follow the mouse cursor.
 }
-
-
-/* Drag and drop code */
 
 /**
- * When the drag begin we first set the right icon to appear next to the cursor
+ * This callback is invoked on the drag source (e.g the widget being dragged) in response
+ * to the "drag_data_get" signal. It sets the pointer of the source widget in the selection
+ * data.
  */
-static void on_drag_begin(GtkWidget *widget, GdkDragContext *context, gpointer user_data) {
-    TaskItem *item = TASK_ITEM (widget);
-    TaskItemPrivate *priv = item->priv;
-    GdkRectangle area = priv->area;
-    gint size = MIN (area.height, area.width);
-    GdkPixbuf *pixbuf = task_item_sized_pixbuf_for_window (item, priv->window, size);
-    gtk_drag_source_set_icon_pixbuf(widget, pixbuf);
-    g_object_set_data (G_OBJECT (item), "drag-true", GINT_TO_POINTER (1));
-}
-
-static void on_drag_get_data(
+static void on_drag_get_data (
     GtkWidget *widget,
     GdkDragContext *context,
     GtkSelectionData *selection_data,
@@ -628,6 +658,10 @@ static void on_drag_get_data(
     }
 }
 
+/**
+ * This function should decide if data being dragged into it is fine and in exchange
+ * should resume or abort the operation.
+ */
 static gboolean on_drag_drop (
     GtkWidget *widget,
     GdkDragContext *context,
@@ -637,7 +671,7 @@ static gboolean on_drag_drop (
 {
 	gdk_drop_finish (context, TRUE, time);
     gtk_drag_finish (context, TRUE, TRUE, time);
-    return FALSE;
+    return TRUE;
 }
 
 void on_drag_end (
@@ -648,6 +682,9 @@ void on_drag_end (
     g_object_set_data (G_OBJECT (widget), "drag-true", GINT_TO_POINTER (0));
 }
 
+/**
+ * This is a helper function to get the position of the widget in the GtkGrid
+ */
 gint gtk_grid_get_pos (GtkWidget *grid, GtkWidget *item) {
     GtkContainer *container = GTK_CONTAINER (grid);
     GList *items = gtk_container_get_children (container);
@@ -801,7 +838,7 @@ GtkWidget *task_item_new (WnckWindow *window) {
      * As a source the dragged icon can be dragged to another position on the
      * task list.
      */
-    //target (destination)
+    //target or destination, respectivly
     gtk_drag_dest_set (
         item,
         GTK_DEST_DEFAULT_HIGHLIGHT,
@@ -825,7 +862,7 @@ GtkWidget *task_item_new (WnckWindow *window) {
         G_CALLBACK (on_drag_motion), item);
     g_signal_connect (item, "drag-leave",
         G_CALLBACK (on_drag_leave), item);
-    g_signal_connect (item, "drag_data_received",
+    g_signal_connect (item, "drag-data-received",
         G_CALLBACK(on_drag_received_data), NULL);
     g_signal_connect (item, "drag-drop",
         G_CALLBACK (on_drag_drop), NULL);
@@ -834,7 +871,7 @@ GtkWidget *task_item_new (WnckWindow *window) {
     /* Drag and drop (source signals) */
     g_signal_connect (item, "drag-begin",
         G_CALLBACK (on_drag_begin), item);
-    g_signal_connect (item, "drag_data_get",
+    g_signal_connect (item, "drag-data-get",
         G_CALLBACK (on_drag_get_data), item);
 
     /* Other signals */
