@@ -33,7 +33,7 @@ IT_PROG_INTLTOOL([0.34])
 AM_GLIB_GNU_GETTEXT
 
 if test "x$GCC" = "xyes"; then
-        GCC_FLAGS="-g -Wall -Werror"
+        GCC_FLAGS="-g -Wall -Werror -Wno-deprecated-declarations"
 fi
 
 APPLETDIR=`pkg-config --variable=libpanel_applet_dir libpanelapplet-4.0`
