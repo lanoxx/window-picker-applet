@@ -429,23 +429,23 @@ static void on_window_state_changed (
     WnckWindow      *window,
     WnckWindowState  changed_mask,
     WnckWindowState  new_state,
-    TaskItem        *item)
+    TaskItem *taskItem)
 {
     g_return_if_fail (WNCK_IS_WINDOW (window));
-    g_return_if_fail (IS_TASK_ITEM (item));
-    TaskItemPrivate *priv = item->priv;
+    g_return_if_fail (IS_TASK_ITEM (taskItem));
+    TaskItemPrivate *priv = taskItem->priv;
     if (new_state & WNCK_WINDOW_STATE_URGENT && !priv->timer) {
-        priv->timer = g_timeout_add (30, (GSourceFunc)on_blink, item);
+        priv->timer = g_timeout_add (30, (GSourceFunc)on_blink, taskItem);
         g_get_current_time (&priv->urgent_time);
     }
-    task_item_set_visibility (item);
+    task_item_set_visibility (taskItem);
 }
 
 static void on_window_workspace_changed (
-    WnckWindow *window, TaskItem *item)
+    WnckWindow *window, TaskItem *taskItem)
 {
-    g_return_if_fail (IS_TASK_ITEM (item));
-    task_item_set_visibility (item);
+    g_return_if_fail (IS_TASK_ITEM (taskItem));
+    task_item_set_visibility (taskItem);
 }
 
 static void on_window_icon_changed (WnckWindow *window, TaskItem *item) {
@@ -480,15 +480,15 @@ static void on_screen_active_window_changed (
 static void on_screen_active_workspace_changed (
     WnckScreen    *screen,
     WnckWorkspace *old_workspace,
-    TaskItem      *item)
+    TaskItem      *taskItem)
 {
-    g_return_if_fail (IS_TASK_ITEM (item));
-    task_item_set_visibility (item);
+    g_return_if_fail (IS_TASK_ITEM (taskItem));
+    task_item_set_visibility (taskItem);
 }
 
 static void on_screen_active_viewport_changed (
-    WnckScreen    *screen,
-    TaskItem      *item)
+    WnckScreen  *screen,
+    TaskItem    *item)
 {
     g_return_if_fail (item != NULL);
     g_return_if_fail (IS_TASK_ITEM(item));
@@ -496,9 +496,9 @@ static void on_screen_active_viewport_changed (
 }
 
 static void on_screen_window_closed (
-    WnckScreen  *screen,
-    WnckWindow  *window,
-    TaskItem    *item)
+    WnckScreen   *screen,
+    WnckWindow   *window,
+    TaskItem     *item)
 {
     g_return_if_fail (IS_TASK_ITEM(item));
     TaskItemPrivate *priv = item->priv;
@@ -634,7 +634,7 @@ static gboolean on_drag_drop (
     return FALSE;
 }
 
-void on_drag_end (
+static void on_drag_end (
     GtkWidget *widget,
     GdkDragContext *drag_context,
     gpointer user_data)
@@ -674,6 +674,7 @@ static void on_drag_received_data (
                 GtkWidget *taskList = mainapp->tasks;
                 gpointer *data = (gpointer *) gtk_selection_data_get_data(selection_data);
                 g_assert(GTK_IS_WIDGET(*data));
+
                 GtkWidget *taskItem = GTK_WIDGET(*data);
                 g_assert(IS_TASK_ITEM(taskItem));
                 if(taskItem == widget) break; //source and target are identical
@@ -717,6 +718,7 @@ static void task_item_finalize (GObject *object) {
     if (priv->timer) {
         g_source_remove (priv->timer);
     }
+
     if (GDK_IS_PIXBUF (priv->pixbuf)) {
         g_object_unref (priv->pixbuf);
     }
