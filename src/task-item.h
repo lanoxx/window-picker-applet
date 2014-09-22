@@ -28,7 +28,7 @@
 #define TASK_TYPE_ITEM            (task_item_get_type ())
 #define TASK_ITEM(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TASK_TYPE_ITEM, TaskItem))
 #define TASK_ITEM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  TASK_TYPE_ITEM, TaskItemClass))
-#define TASK_IS_ITEM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TASK_TYPE_ITEM))
+#define IS_TASK_ITEM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TASK_TYPE_ITEM))
 #define TASK_IS_ITEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  TASK_TYPE_ITEM))
 #define TASK_ITEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  TASK_TYPE_ITEM, TaskItemClass))
 
